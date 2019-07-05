@@ -1,0 +1,61 @@
+body {
+	font-size: 14px;
+	font-family: sans-serif;
+	padding: 20px;
+}
+.container {
+}
+p {
+	margin-left: 50px;
+}
+#power {
+	font-size: 20px;
+	width: 100px;
+	height: 32px;
+	display: none;
+}
+
+.status_area {
+	border: 1px solid #000000;
+	border-radius: 5px;
+	vertical-align: middle;
+	height: 32px;
+	padding: 10px;
+
+}
+
+#status_message {
+	float: left;
+	font-size: 20px;
+	height: 32px;
+	line-height: 32px;
+	vertical-align: middle;
+	font-weight: bold;
+	margin: 0 15px;
+}
+
+#status_load {
+	float: left;
+	width: 32px;
+	height: 32px;
+	display: none;
+}
+
+#status_run {
+	float: left;
+	width: 32px;
+	height: 32px;
+	border-radius: 32px;
+	background-color:#00FF00;
+	display: none;
+}
+
+#status_stop {
+	float: left;
+	width: 32px;
+	height: 32px;
+	border-radius: 32px;
+	background-color:#FF0000;
+	display: none;
+}
+

@@ -1,0 +1,11 @@
+[Unit]
+Description = mamemocraft start
+
+[Service]
+ExecStart = /home/mamemocraft/mamemocraft/bin/run.sh
+User = mamemocraft
+Type = simple
+
+[Install]
+WantedBy = multi-user.target
+

@@ -1,0 +1,12 @@
+[Unit]
+Description = mamemocraft web daemon
+
+[Service]
+ExecStart = ###BASEDIR###/bin/mcweb
+WorkingDirectory = ###BASEDIR###
+Restart = always
+Type = simple
+
+[Install]
+WantedBy = multi-user.target
+
