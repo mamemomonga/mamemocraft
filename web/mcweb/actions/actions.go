@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 	"sync"
+	"github.com/mamemomonga/mamemocraft/web/mcweb/web"
 )
 
 type Actions struct {
@@ -56,7 +57,6 @@ func New(config Config) *Actions {
 		ConnectTimeout: 10,
 	}
 
-
 	t.mutex = new(sync.Mutex)
 	t.setStateMessage( StatusLoading, "準備中です。しばらくおまちください。")
 	return t
@@ -71,32 +71,10 @@ func (t *Actions) setStateMessage(s int, m string) {
 
 func (t *Actions) Run() {
 	t.doStatus = true
-	ctx := context.Background()
-
-	go func() {
-		for {
-			log.Printf(" **** START FORWARD")
-			ssh := NewSSH(*t.sshconf)
-			func() {
-				err := ssh.Connect()
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				err = ssh.LocalForward(ctx,"127.0.0.1:5006","127.0.0.1:8123")
-				if err != nil {
-					log.Println(err)
-					return
-				}
-			}()
-			log.Printf(" **** FINISH FORWARD")
-			time.Sleep( time.Second * 10 )
-		}
-	}()
-	go t.Runner(ctx)
+	go t.Runner()
 }
 
-func (t *Actions) Runner(ctx context.Context) {
+func (t *Actions) Runner() {
 	for {
 		log.Println("RUNNER")
 		if t.doStatus {
@@ -123,6 +101,36 @@ func (t *Actions) Runner(ctx context.Context) {
 		time.Sleep(time.Second * 10)
 	}
 }
+
+
+func (t *Actions) RunnerDymmap(ctx context.Context) {
+	for {
+		if d.state == StatusRunning {
+			err := func() error {
+				log.Println("[RunnnerDynmap] Start PortForwading")
+				ssh := NewSSH(*t.sshconf)
+				err := ssh.Connect()
+				if err != nil {
+					return err
+				}
+				err = ssh.LocalForward(ctx,"127.0.0.1:5006", "127.0.0.1:8123")
+				if err != nil {
+					return err
+				}
+			}()
+			if err != nil {
+				log.Printf("[RunnerDynmap] ERR %v",err)
+				time.Sleep(time.Second * 10)
+			}
+		} else {
+			log.Println("[RunnnerDynmap] Start Web")
+			wdy := web.NewWebDymap("127.0.0.1:5006")
+			wdy.Shutdown(ctx)
+			wdy.Run()
+		}
+	}
+}
+
 
 func (t *Actions) chkStatus() {
 	st, err := t.gce.Get()
