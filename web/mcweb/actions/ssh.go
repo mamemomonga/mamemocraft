@@ -13,12 +13,12 @@ import (
 )
 
 type SSH struct {
-	conf     NewSSHConfig
+	conf     *SSHConfig
 	Client   *ssh.Client
 	Session  *ssh.Session
 }
 
-type NewSSHConfig struct {
+type SSHConfig struct {
 	KeyFile string
 	User    string
 	Host    string
@@ -26,7 +26,7 @@ type NewSSHConfig struct {
 	ConnectTimeout int
 }
 
-func NewSSH( c NewSSHConfig) *SSH {
+func NewSSH(c *SSHConfig) *SSH {
 	t := new(SSH)
 	t.conf = c
 	return t
@@ -51,7 +51,7 @@ func (t *SSH)Connect() (err error) {
 		Timeout:         time.Second * time.Duration(t.conf.ConnectTimeout),
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	client, err := ssh.Dial("tcp", t.conf.Host+":"+t.conf.Port, sshConfig)
+	client, err := ssh.Dial("tcp", t.conf.Host + ":" + t.conf.Port, sshConfig)
 	if err != nil {
 		return err
 	}

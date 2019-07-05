@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"context"
 	"log"
 	"time"
 	"sync"
@@ -10,7 +9,7 @@ import (
 
 type Actions struct {
 	gce      *GCE
-	sshconf  *NewSSHConfig
+	sshconf  *SSHConfig
 
 	mutex    *sync.Mutex
 
@@ -19,6 +18,8 @@ type Actions struct {
 
 	state    int
 	message  string
+
+	dymap    *Dymap
 }
 
 type Config struct {
@@ -49,13 +50,19 @@ func New(config Config) *Actions {
 	t.gce.Zone     = config.GCEZone
 	t.gce.Instance = config.GCEInstance
 
-	t.sshconf =  &NewSSHConfig{
+	t.sshconf =  &SSHConfig{
 		KeyFile: config.SSHKeyFile,
 		User:    config.SSHUser,
 		Host:    config.SSHHost,
 		Port:    config.SSHPort,
 		ConnectTimeout: 10,
 	}
+
+	t.dymap = NewDymap(&DymapConfig{
+		Listen: "127.0.0.1:5006",
+		WebURL: "https://mamemocraft-beta.mamemo.online/",
+		SSHconfig: t.sshconf,
+	})
 
 	t.mutex = new(sync.Mutex)
 	t.setStateMessage( StatusLoading, "準備中です。しばらくおまちください。")
@@ -71,21 +78,28 @@ func (t *Actions) setStateMessage(s int, m string) {
 
 func (t *Actions) Run() {
 	t.doStatus = true
+
 	go t.Runner()
+
+	w := web.NewWebMain("127.0.0.1:5005")
+	w.CbStatus = t.Status
+	w.CbStart  = t.Start
+	w.Run()
 }
 
 func (t *Actions) Runner() {
+
 	for {
-		log.Println("RUNNER")
+		log.Println("[RUNNER]")
 		if t.doStatus {
-			log.Println("[ACT] STATUS")
+			log.Println("[RUNNER] STATUS")
 			t.chkStatus()
 			t.mutex.Lock()
 			t.doStatus = false
 			t.mutex.Unlock()
 		}
 		if t.doStart {
-			log.Println("[ACT] START")
+			log.Println("[RUNNER] START")
 			_, err := t.gce.Start()
 			if err != nil {
 				t.setStateMessage( StatusUnknown, "GCE インスタンス起動失敗😭")
@@ -98,39 +112,16 @@ func (t *Actions) Runner() {
 			t.mutex.Unlock()
 			time.Sleep(time.Second * 15)
 		}
+
+		if t.state == StatusRunning {
+			t.dymap.RunPF()
+		} else {
+			t.dymap.RunWeb()
+		}
+
 		time.Sleep(time.Second * 10)
 	}
 }
-
-
-func (t *Actions) RunnerDymmap(ctx context.Context) {
-	for {
-		if d.state == StatusRunning {
-			err := func() error {
-				log.Println("[RunnnerDynmap] Start PortForwading")
-				ssh := NewSSH(*t.sshconf)
-				err := ssh.Connect()
-				if err != nil {
-					return err
-				}
-				err = ssh.LocalForward(ctx,"127.0.0.1:5006", "127.0.0.1:8123")
-				if err != nil {
-					return err
-				}
-			}()
-			if err != nil {
-				log.Printf("[RunnerDynmap] ERR %v",err)
-				time.Sleep(time.Second * 10)
-			}
-		} else {
-			log.Println("[RunnnerDynmap] Start Web")
-			wdy := web.NewWebDymap("127.0.0.1:5006")
-			wdy.Shutdown(ctx)
-			wdy.Run()
-		}
-	}
-}
-
 
 func (t *Actions) chkStatus() {
 	st, err := t.gce.Get()
@@ -178,7 +169,7 @@ func (t *Actions) chkStatus() {
 
 func (t *Actions) sshFileExists(path string) (exists bool, err error) {
 	log.Printf("[SSH] ChkFile "+path)
-	ssh := NewSSH(*t.sshconf)
+	ssh := NewSSH(t.sshconf)
 	err = ssh.Connect()
 	if err != nil {
 		log.Printf("[SSH] Connect %s",err)

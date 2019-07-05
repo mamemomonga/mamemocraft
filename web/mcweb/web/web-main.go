@@ -7,17 +7,16 @@ import (
 	"html/template"
 	"encoding/json"
 //	"github.com/davecgh/go-spew/spew"
-	"github.com/mamemomonga/mamemocraft/web/mcweb/actions"
 )
 
 type WebMain struct {
-	actions *actions.Actions
 	Server     *http.Server
+	CbStatus   func()(int, string)
+	CbStart    func()(int, string)
 }
 
-func NewWebMain(listen string, act *actions.Actions) *WebMain {
+func NewWebMain(listen string) *WebMain {
 	t := new(WebMain)
-	t.actions = act
 
 	box := boxStatic()
 
@@ -84,10 +83,10 @@ func (t *WebMain) handleApi(w http.ResponseWriter, r *http.Request) {
 
 	switch r.URL.Path {
 		case "/api/state":
-			state,message := t.actions.Status()
+			state,message := t.CbStatus()
 			resp(apiState{ Code: 200, State: state, Message: message })
 		case "/api/poweron":
-			state,message := t.actions.Start()
+			state,message := t.CbStart()
 			resp(apiState{ Code: 200, State: state, Message: message })
 		default:
 			resp(apiState{ Code: 404, State: 0, Message: "File Not Found" })

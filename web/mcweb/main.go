@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/mamemomonga/mamemocraft/web/mcweb/buildinfo"
-	"github.com/mamemomonga/mamemocraft/web/mcweb/web"
 	"github.com/mamemomonga/mamemocraft/web/mcweb/actions"
 )
 
@@ -24,11 +23,5 @@ func main() {
 	})
 	act.Run()
 
-//	go func() {
-//		wdy := web.NewWebDymap("0.0.0.0:5006")
-//		wdy.Run()
-//	}()
-
-	web.NewWebMain("0.0.0.0:5005",act).Run()
 }
 
