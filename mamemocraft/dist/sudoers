@@ -1,0 +1,2 @@
+mamemocraft ALL=(ALL) NOPASSWD: /sbin/reboot
+mamemocraft ALL=(ALL) NOPASSWD: /sbin/poweroff

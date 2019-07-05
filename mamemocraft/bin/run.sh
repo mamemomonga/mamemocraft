@@ -2,7 +2,7 @@
 set -eu
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. &&  pwd )"
 MINECRAFT_SERVER=1.14.3
-MEMSIZE=2000M
+MEMSIZE=10G
 
 $BASEDIR/bin/launch_watcher.sh &
 cd $BASEDIR/data
