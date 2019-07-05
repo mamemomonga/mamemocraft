@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"fmt"
 	"log"
 	"time"
 	"sync"
@@ -126,6 +127,11 @@ func (t *Actions) Runner() {
 }
 
 func (t *Actions) chkStatus() {
+
+	stateFile := func(name string) string {
+		return fmt.Sprintf("/home/mamemocraft/mamemocraft/var/%s",name)
+	}
+
 	st, err := t.gce.Get()
 	if err != nil {
 		log.Printf("[GCE ERR] %s",err)
@@ -134,7 +140,7 @@ func (t *Actions) chkStatus() {
 	log.Printf("[GCE] %s",st.Status)
 
 	if st.Status == "RUNNING" {
-		maintenance, err := t.sshFileExists("/home/mamemocraft/mamemocraft/var/maintenance")
+		maintenance, err := t.sshFileExists(stateFile("maintenance"))
 		if err != nil {
 			return
 		}
@@ -143,18 +149,21 @@ func (t *Actions) chkStatus() {
 			log.Printf("[SSH] mamemocraft is maintenance")
 			return
 		}
-		stop, err := t.sshFileExists("/home/mamemocraft/mamemocraft/var/down")
+		stop, err := t.sshFileExists(stateFile("down"))
 		if stop {
 			t.setStateMessage( StatusLoading, "Minecraft Serverがとまってます😭")
 			log.Printf("[SSH] mamemocraft is stop")
 			if AutoReboot {
 				_ = t.sshRun("sudo /sbin/reboot")
 				log.Printf("[SSH] mamemocraft is rebooting")
+				time.Sleep(time.Second * 30)
+				t.setStateMessage( StatusLoading, "インスタンスを再起動しています")
+				time.Sleep(time.Second * 30)
 			}
 			return
 		}
 
-		running, err := t.sshFileExists("/home/mamemocraft/mamemocraft/var/running")
+		running, err := t.sshFileExists(stateFile("running"))
 		if err != nil {
 			return
 		}
