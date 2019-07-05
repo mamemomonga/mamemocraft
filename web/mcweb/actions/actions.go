@@ -27,6 +27,7 @@ type Actions struct {
 	message  string
 
 	players  int
+	playersZeroRemain int
 
 	dymap    *Dymap
 }
@@ -43,11 +44,14 @@ type Config struct {
 }
 
 const AutoReboot = true
+const PlayersZeroEnable = true
+const PlayersZeroMax = 10 // プレイヤーゼロが継続したらシャットダウン
 
 const StatusUnknown  = 0
 const StatusStop     = 1
 const StatusLoading  = 2
 const StatusRunning  = 3
+
 
 func New(config Config) *Actions {
 	t := new(Actions)
@@ -93,9 +97,14 @@ func (t *Actions) setStateMessage(s int, m string) {
 
 func (t *Actions) Run() {
 	t.doStatus = true
+	t.playersZeroRemain = PlayersZeroMax
 
 	go t.sync.Start(context.Background())
 	go t.Runner()
+
+	if PlayersZeroEnable {
+		go t.playersZero()
+	}
 
 	w := web.NewWebMain("127.0.0.1:5005")
 	w.CbStatus = t.Status
@@ -118,6 +127,7 @@ func (t *Actions) Runner() {
 			go t.dymap.RunPF()
 			t.sync.Run()
 		} else {
+			t.playersZeroRemain = PlayersZeroMax
 			go t.dymap.RunWeb()
 			t.sync.Stop()
 		}
@@ -134,6 +144,23 @@ func (t *Actions) loginPlayers() {
 		current,_ := strconv.Atoi(match[1])
 		t.players = current
 		log.Printf("[Players] Current %d",t.players)
+		if t.players > 0 {
+			t.playersZeroRemain = PlayersZeroMax
+		}
+	}
+}
+
+func (t *Actions) playersZero() {
+	for {
+		if t.mcRunning {
+			log.Printf("[PlayersZero] Remain: %d",t.playersZeroRemain)
+			if t.playersZeroRemain == 0 {
+				_ = t.sshRun("sudo /sbin/poweroff")
+			} else {
+				t.playersZeroRemain--
+			}
+		}
+		time.Sleep( time.Minute )
 	}
 }
 
