@@ -6,6 +6,8 @@ import (
 	"time"
 	"sync"
 	"context"
+	"regexp"
+	"strconv"
 	"github.com/mamemomonga/mamemocraft/web/mcweb/web"
 )
 
@@ -23,6 +25,8 @@ type Actions struct {
 
 	state    int
 	message  string
+
+	players  int
 
 	dymap    *Dymap
 }
@@ -110,6 +114,7 @@ func (t *Actions) Runner() {
 			t.runnerDoStatus()
 		}
 		if t.mcRunning {
+			t.loginPlayers()
 			go t.dymap.RunPF()
 			t.sync.Run()
 		} else {
@@ -117,6 +122,18 @@ func (t *Actions) Runner() {
 			t.sync.Stop()
 		}
 		time.Sleep(time.Second * 10)
+	}
+}
+
+func (t *Actions) loginPlayers() {
+	buf,err := t.sshRunStdout("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p minecraft list")
+	if err == nil {
+		log.Printf("[Players] %s",buf)
+		rex := regexp.MustCompile(`^There are (\d+) of a max (\d+) players online:`)
+		match := rex.FindStringSubmatch(buf)
+		current,_ := strconv.Atoi(match[1])
+		t.players = current
+		log.Printf("[Players] Current %d",t.players)
 	}
 }
 
@@ -240,16 +257,40 @@ func (t *Actions) sshRun(cmd string) (err error) {
 	err = ssh.Connect()
 	if err != nil {
 		log.Printf("[SSH] Connect %s",err)
+		return err
 	}
 	err = ssh.SessionOpen()
 	if err != nil {
 		log.Printf("[SSH] Session %s",err)
+		return err
 	}
 	defer ssh.SessionClose()
 	err = ssh.Session.Run(cmd)
 	log.Printf("[SSH] RetVal %s",err)
 	return err
 }
+
+func (t *Actions) sshRunStdout(cmd string) (buf string,err error) {
+	ssh := NewSSH(t.sshconf)
+	err = ssh.Connect()
+	err = ssh.Connect()
+	if err != nil {
+		log.Printf("[SSH] Connect %s",err)
+		return "",err
+	}
+	err = ssh.SessionOpen()
+	if err != nil {
+		log.Printf("[SSH] Session %s",err)
+		return "",err
+	}
+	defer ssh.SessionClose()
+	buf, err = ssh.RunStdout(cmd)
+	if err != nil {
+		log.Printf("[SSH] Retval %s",err)
+	}
+	return buf,err
+}
+
 
 func (t *Actions) Status()(state int, message string) {
 	state    = t.state

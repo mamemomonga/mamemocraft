@@ -40,7 +40,7 @@ func (t *Sync) Start(ctx context.Context) {
 			doit()
 			t.counter ++
 		}
-		time.Sleep( time.Second )
+		time.Sleep( time.Minute )
 		select {
 		case <-ctx.Done():
 			break T
