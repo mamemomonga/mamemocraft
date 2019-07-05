@@ -52,3 +52,4 @@ func (t *GCE) Start() (*compute.Operation, error) {
 func (t *GCE) Stop() (*compute.Operation, error) {
 	return t.instance.Stop(t.Project, t.Zone, t.Instance).Do()
 }
+

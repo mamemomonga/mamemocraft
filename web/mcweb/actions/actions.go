@@ -33,6 +33,8 @@ type Config struct {
 	SSHPort     string
 }
 
+const AutoReboot = true
+
 const StatusUnknown  = 0
 const StatusStop     = 1
 const StatusLoading  = 2
@@ -141,6 +143,17 @@ func (t *Actions) chkStatus() {
 			log.Printf("[SSH] mamemocraft is maintenance")
 			return
 		}
+		stop, err := t.sshFileExists("/home/mamemocraft/mamemocraft/var/stop")
+		if stop {
+			t.setStateMessage( StatusLoading, "Minecraft Serverがクラッシュしてます😭")
+			log.Printf("[SSH] mamemocraft is stop")
+			if AutoReboot {
+				_,_ = t.sshFileExists("/sbin/reboot")
+				log.Printf("[SSH] mamemocraft is rebooting")
+			}
+			return
+		}
+
 		running, err := t.sshFileExists("/home/mamemocraft/mamemocraft/var/running")
 		if err != nil {
 			return
@@ -173,13 +186,13 @@ func (t *Actions) sshFileExists(path string) (exists bool, err error) {
 	err = ssh.Connect()
 	if err != nil {
 		log.Printf("[SSH] Connect %s",err)
-		t.setStateMessage( StatusUnknown,"状況わかんないです😭")
+		t.setStateMessage( StatusLoading, "状況わかんないです😭")
 		return false,err
 	}
 	err = ssh.SessionOpen()
 	if err != nil {
 		log.Printf("[SSH] Session %s",err)
-		t.setStateMessage( StatusUnknown,"状況わかんないです😭")
+		t.setStateMessage( StatusLoading, "状況わかんないです😭")
 		return false,err
 	}
 	defer ssh.SessionClose()
