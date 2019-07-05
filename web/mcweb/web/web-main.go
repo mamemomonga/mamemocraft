@@ -15,6 +15,8 @@ type WebMain struct {
 	CbStart    func()(int, string)
 }
 
+const Debug = false
+
 func NewWebMain(listen string) *WebMain {
 	t := new(WebMain)
 
@@ -78,7 +80,9 @@ func (t *WebMain) handleApi(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		w.Header().Set("Content-Type","application/json; charset=utf-8")
 		fmt.Fprintln(w,string(buf))
-		log.Printf("[WebMain API] %s %d %s",r.RemoteAddr,rs.Code,r.RequestURI)
+		if Debug {
+			log.Printf("[WebMain API] %s %d %s",r.RemoteAddr,rs.Code,r.RequestURI)
+		}
 	}
 
 	switch r.URL.Path {
