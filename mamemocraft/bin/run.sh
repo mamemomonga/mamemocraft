@@ -2,13 +2,14 @@
 set -eu
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. &&  pwd )"
 MINECRAFT_SERVER=1.14.3
-MEMSIZE=1500M
+MEMSIZE=2000M
 
 $BASEDIR/bin/launch_watcher.sh &
-
 cd $BASEDIR/data
 
-set +x
+rm -f $BASEDIR/var/down
+
+set +e
 java -Xms$MEMSIZE -Xmx$MEMSIZE \
 	-XX:+AlwaysPreTouch \
 	-XX:+DisableExplicitGC \
@@ -24,5 +25,5 @@ java -Xms$MEMSIZE -Xmx$MEMSIZE \
  	-jar ../spigot/spigot-$MINECRAFT_SERVER.jar \
 	> $BASEDIR/var/log.txt 2>&1
 
-sudo /sbin/reboot
+touch $BASEDIR/var/down
 
