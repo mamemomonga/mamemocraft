@@ -143,12 +143,12 @@ func (t *Actions) chkStatus() {
 			log.Printf("[SSH] mamemocraft is maintenance")
 			return
 		}
-		stop, err := t.sshFileExists("/home/mamemocraft/mamemocraft/var/stop")
+		stop, err := t.sshFileExists("/home/mamemocraft/mamemocraft/var/down")
 		if stop {
-			t.setStateMessage( StatusLoading, "Minecraft Serverがクラッシュしてます😭")
+			t.setStateMessage( StatusLoading, "Minecraft Serverがとまってます😭")
 			log.Printf("[SSH] mamemocraft is stop")
 			if AutoReboot {
-				_,_ = t.sshFileExists("/sbin/reboot")
+				_ = t.sshRun("sudo /sbin/reboot")
 				log.Printf("[SSH] mamemocraft is rebooting")
 			}
 			return
@@ -201,6 +201,24 @@ func (t *Actions) sshFileExists(path string) (exists bool, err error) {
 		return false,nil
 	}
 	return true,nil
+}
+
+func (t *Actions) sshRun(cmd string) (err error) {
+	log.Printf("[SSH] Run "+cmd)
+	ssh := NewSSH(t.sshconf)
+	err = ssh.Connect()
+	err = ssh.Connect()
+	if err != nil {
+		log.Printf("[SSH] Connect %s",err)
+	}
+	err = ssh.SessionOpen()
+	if err != nil {
+		log.Printf("[SSH] Session %s",err)
+	}
+	defer ssh.SessionClose()
+	err = ssh.Session.Run(cmd)
+	log.Printf("[SSH] RetVal %s",err)
+	return err
 }
 
 func (t *Actions) Status()(state int, message string) {
