@@ -258,6 +258,7 @@ func (t *Actions) sshFileExists(path string) (exists bool, err error) {
 	log.Printf("[SSH] ChkFile "+path)
 	ssh := NewSSH(t.sshconf)
 	err = ssh.Connect()
+	defer ssh.Client.Close()
 	if err != nil {
 		log.Printf("[SSH] Connect %s",err)
 		t.setStateMessage( StatusLoading, "状況わかんないです😭")
@@ -269,7 +270,7 @@ func (t *Actions) sshFileExists(path string) (exists bool, err error) {
 		t.setStateMessage( StatusLoading, "状況わかんないです😭")
 		return false, err
 	}
-	defer ssh.SessionClose()
+	defer ssh.Session.Close()
 	err = ssh.Session.Run("test -e "+path)
 	if err != nil {
 		return false,nil
@@ -281,17 +282,17 @@ func (t *Actions) sshRun(cmd string) (err error) {
 	log.Printf("[SSH] Run "+cmd)
 	ssh := NewSSH(t.sshconf)
 	err = ssh.Connect()
-	err = ssh.Connect()
 	if err != nil {
 		log.Printf("[SSH] Connect %s",err)
 		return err
 	}
+	defer ssh.Client.Close()
 	err = ssh.SessionOpen()
 	if err != nil {
 		log.Printf("[SSH] Session %s",err)
 		return err
 	}
-	defer ssh.SessionClose()
+	defer ssh.Session.Close()
 	err = ssh.Session.Run(cmd)
 	log.Printf("[SSH] RetVal %s",err)
 	return err
@@ -300,17 +301,17 @@ func (t *Actions) sshRun(cmd string) (err error) {
 func (t *Actions) sshRunStdout(cmd string) (buf string,err error) {
 	ssh := NewSSH(t.sshconf)
 	err = ssh.Connect()
-	err = ssh.Connect()
 	if err != nil {
 		log.Printf("[SSH] Connect %s",err)
 		return "",err
 	}
+	defer ssh.Client.Close()
 	err = ssh.SessionOpen()
 	if err != nil {
 		log.Printf("[SSH] Session %s",err)
 		return "",err
 	}
-	defer ssh.SessionClose()
+	defer ssh.Session.Close()
 	buf, err = ssh.RunStdout(cmd)
 	if err != nil {
 		log.Printf("[SSH] Retval %s",err)
