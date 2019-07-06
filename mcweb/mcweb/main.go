@@ -20,6 +20,7 @@ func main() {
 		SSHUser:     "mamemocraft",
 		SSHHost:     "mc01.mamemo.online",
 		SSHPort:     "22",
+		SyncAPPDir:  "../sync",
 	})
 	act.Run()
 

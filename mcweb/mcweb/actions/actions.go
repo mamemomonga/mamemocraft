@@ -41,6 +41,7 @@ type Config struct {
 	SSHUser     string
 	SSHHost     string
 	SSHPort     string
+	SyncAPPDir  string
 }
 
 const AutoReboot = true
@@ -80,7 +81,7 @@ func New(config Config) *Actions {
 	})
 
 
-	t.sync = NewSync()
+	t.sync = NewSync(config.SyncAPPDir)
 
 	t.mcRunning = false
 	t.mutex = new(sync.Mutex)
