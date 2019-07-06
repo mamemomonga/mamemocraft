@@ -2,7 +2,7 @@
 Description = mamemocraft web daemon
 
 [Service]
-ExecStart = ###BASEDIR###/bin/mcweb
+ExecStart = ###BASEDIR###/bin/mcweb etc/config.yaml
 WorkingDirectory = ###BASEDIR###
 Restart = always
 Type = simple

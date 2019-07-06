@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/web"
+	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/config"
 )
 
 type Actions struct {
@@ -29,19 +30,10 @@ type Actions struct {
 	players  int
 	playersZeroRemain int
 
-	dymap    *Dymap
-}
+	rconPassword string
 
-type Config struct {
-	GCEKeyFile  string
-	GCEProject  string
-	GCEZone     string
-	GCEInstance string
-	SSHKeyFile  string
-	SSHUser     string
-	SSHHost     string
-	SSHPort     string
-	SyncAPPDir  string
+	dymap    *Dymap
+
 }
 
 const AutoReboot = true
@@ -54,11 +46,18 @@ const StatusLoading  = 2
 const StatusRunning  = 3
 
 
-func New(config Config) *Actions {
+func New(configFile string) *Actions {
 	t := new(Actions)
 
+	config,err := config.Load(configFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	t.rconPassword = config.RConPassword
+
 	t.gce = NewGCE()
-	err := t.gce.LoadCredentialsFile(config.GCEKeyFile)
+	err = t.gce.LoadCredentialsFile(config.GCEKeyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -137,7 +136,8 @@ func (t *Actions) Runner() {
 }
 
 func (t *Actions) loginPlayers() {
-	buf,err := NewSSH(t.sshconf).GetStdout("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p minecraft list")
+	cmd := fmt.Sprintf("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p %s list",t.rconPassword)
+	buf,err := NewSSH(t.sshconf).GetStdout(cmd)
 	if err == nil {
 		log.Printf("[Players] %s",buf)
 		rex := regexp.MustCompile(`^There are (\d+) of a max (\d+) players online:`)

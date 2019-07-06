@@ -7,4 +7,5 @@ require (
 	github.com/gobuffalo/packr/v2 v2.5.2
 	golang.org/x/crypto v0.0.0-20190621222207-cc06ce4a13d4
 	google.golang.org/api v0.7.0
+	gopkg.in/yaml.v2 v2.2.2
 )
