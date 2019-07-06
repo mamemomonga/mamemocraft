@@ -8,7 +8,7 @@ import (
 	"context"
 	"regexp"
 	"strconv"
-	"github.com/mamemomonga/mamemocraft/web/mcweb/web"
+	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/web"
 )
 
 type Actions struct {

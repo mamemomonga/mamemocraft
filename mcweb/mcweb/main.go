@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/mamemomonga/mamemocraft/web/mcweb/buildinfo"
-	"github.com/mamemomonga/mamemocraft/web/mcweb/actions"
+	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/buildinfo"
+	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/actions"
 )
 
 func main() {

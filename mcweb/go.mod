@@ -1,4 +1,4 @@
-module github.com/mamemomonga/mamemocraft/web
+module github.com/mamemomonga/mamemocraft/mcweb
 
 go 1.12
 

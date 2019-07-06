@@ -6,7 +6,7 @@ import (
 //	"time"
 	"log"
 	"testing"
-	"github.com/mamemomonga/mamemocraft/web/mcweb/actions"
+	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/actions"
 )
 
 var sshconf *actions.SSHConfig
