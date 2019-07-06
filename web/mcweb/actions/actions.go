@@ -136,7 +136,7 @@ func (t *Actions) Runner() {
 }
 
 func (t *Actions) loginPlayers() {
-	buf,err := t.sshRunStdout("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p minecraft list")
+	buf,err := NewSSH(t.sshconf).GetStdout("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p minecraft list")
 	if err == nil {
 		log.Printf("[Players] %s",buf)
 		rex := regexp.MustCompile(`^There are (\d+) of a max (\d+) players online:`)
@@ -155,7 +155,7 @@ func (t *Actions) playersZero() {
 		if t.mcRunning {
 			log.Printf("[PlayersZero] Remain: %d",t.playersZeroRemain)
 			if t.playersZeroRemain == 0 {
-				_ = t.sshRun("sudo /sbin/poweroff")
+				_,_ = NewSSH(t.sshconf).GetExitBool("sudo /sbin/poweroff")
 			} else {
 				t.playersZeroRemain--
 			}
@@ -212,11 +212,7 @@ func (t *Actions) runnerDoStatus() {
 
 func (t *Actions) mcStatus() bool {
 
-	stateFile := func(name string) string {
-		return fmt.Sprintf("/home/mamemocraft/mamemocraft/var/%s",name)
-	}
-
-	maintenance, err := t.sshFileExists(stateFile("maintenance"))
+	maintenance, err := t.sshFileExists("maintenance")
 	if err != nil {
 		return false
 	}
@@ -225,12 +221,12 @@ func (t *Actions) mcStatus() bool {
 		log.Printf("[SSH] mamemocraft is maintenance")
 		return false
 	}
-	stop, err := t.sshFileExists(stateFile("down"))
+	stop, err := t.sshFileExists("down")
 	if stop {
 		t.setStateMessage( StatusLoading, "Minecraft Serverがとまってます😭")
 		log.Printf("[SSH] mamemocraft is stop")
 		if AutoReboot {
-			_ = t.sshRun("sudo /sbin/reboot")
+			_,_ = NewSSH(t.sshconf).GetExitBool("sudo /sbin/reboot")
 			log.Printf("[SSH] mamemocraft is rebooting")
 			time.Sleep(time.Second * 30)
 			t.setStateMessage( StatusLoading, "インスタンスを再起動しています")
@@ -239,7 +235,7 @@ func (t *Actions) mcStatus() bool {
 		return false
 	}
 
-	running, err := t.sshFileExists(stateFile("running"))
+	running, err := t.sshFileExists("running")
 	if err != nil {
 		return false
 	}
@@ -254,71 +250,19 @@ func (t *Actions) mcStatus() bool {
 	}
 }
 
-func (t *Actions) sshFileExists(path string) (exists bool, err error) {
-	log.Printf("[SSH] ChkFile "+path)
-	ssh := NewSSH(t.sshconf)
-	err = ssh.Connect()
-	defer ssh.Client.Close()
+func (t *Actions) sshFileExists(name string) (exists bool, err error) {
+	log.Printf("[SSH] ChkFile %s",name)
+	path:=fmt.Sprintf("/home/mamemocraft/mamemocraft/var/%s",name)
+
+	exists, err = NewSSH(t.sshconf).FileExists(path)
+
 	if err != nil {
-		log.Printf("[SSH] Connect %s",err)
+		log.Printf("[SSH] Error %s",err)
 		t.setStateMessage( StatusLoading, "状況わかんないです😭")
 		return false, err
 	}
-	err = ssh.SessionOpen()
-	if err != nil {
-		log.Printf("[SSH] Session %s",err)
-		t.setStateMessage( StatusLoading, "状況わかんないです😭")
-		return false, err
-	}
-	defer ssh.Session.Close()
-	err = ssh.Session.Run("test -e "+path)
-	if err != nil {
-		return false,nil
-	}
-	return true,nil
+	return exists,nil
 }
-
-func (t *Actions) sshRun(cmd string) (err error) {
-	log.Printf("[SSH] Run "+cmd)
-	ssh := NewSSH(t.sshconf)
-	err = ssh.Connect()
-	if err != nil {
-		log.Printf("[SSH] Connect %s",err)
-		return err
-	}
-	defer ssh.Client.Close()
-	err = ssh.SessionOpen()
-	if err != nil {
-		log.Printf("[SSH] Session %s",err)
-		return err
-	}
-	defer ssh.Session.Close()
-	err = ssh.Session.Run(cmd)
-	log.Printf("[SSH] RetVal %s",err)
-	return err
-}
-
-func (t *Actions) sshRunStdout(cmd string) (buf string,err error) {
-	ssh := NewSSH(t.sshconf)
-	err = ssh.Connect()
-	if err != nil {
-		log.Printf("[SSH] Connect %s",err)
-		return "",err
-	}
-	defer ssh.Client.Close()
-	err = ssh.SessionOpen()
-	if err != nil {
-		log.Printf("[SSH] Session %s",err)
-		return "",err
-	}
-	defer ssh.Session.Close()
-	buf, err = ssh.RunStdout(cmd)
-	if err != nil {
-		log.Printf("[SSH] Retval %s",err)
-	}
-	return buf,err
-}
-
 
 func (t *Actions) Status()(state int, message string) {
 	state    = t.state

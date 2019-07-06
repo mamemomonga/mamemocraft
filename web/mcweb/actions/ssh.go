@@ -10,6 +10,8 @@ import (
 	"net"
 	"io"
 	"context"
+	"fmt"
+//	"github.com/davecgh/go-spew/spew"
 )
 
 type SSH struct {
@@ -32,7 +34,7 @@ func NewSSH(c *SSHConfig) *SSH {
 	return t
 }
 
-func (t *SSH)Connect() (err error) {
+func (t *SSH)connect() (err error) {
 	auth := []ssh.AuthMethod{}
 	{
 		key, err := ioutil.ReadFile(t.conf.KeyFile)
@@ -59,7 +61,7 @@ func (t *SSH)Connect() (err error) {
 	return nil
 }
 
-func (t *SSH)SessionOpen() (err error) {
+func (t *SSH)session() (err error) {
 	t.Session, err = t.Client.NewSession()
 	if err != nil {
 		return err
@@ -71,33 +73,87 @@ func (t *SSH)SessionClose() {
 	t.Session.Close()
 }
 
-func (t *SSH)RunStdout(cmd string) (buf string, err error) {
-	buf =""
-
-	stdout, err := t.Session.StdoutPipe()
+func (t *SSH)GetExitBool(cmd string) (bool,error) {
+	err := t.connect()
 	if err != nil {
-		return buf,err
+		return false, err
 	}
+	defer t.Client.Close()
+
+	err = t.session()
+	if err != nil {
+		return false, err
+	}
+	defer t.Session.Close()
 
 	err = t.Session.Run(cmd)
 	if err != nil {
-		return buf,err
+		if ee,ok := err.(*ssh.ExitError); ok {
+			if ee.Waitmsg.ExitStatus() == 1 {
+				return true,nil
+			}
+		}
+		return false,err
 	}
+	return false,nil
+}
 
+func (t *SSH)FileExists(path string) (bool,error) {
+	ne,err := t.GetExitBool(fmt.Sprintf("test -e %s",path))
+	if err != nil {
+		return false, err
+	}
+	return !ne,nil
+}
+
+func (t *SSH)GetStdout(cmd string) (string, error) {
+	err := t.connect()
+	if err != nil {
+		return "", err
+	}
+	defer t.Client.Close()
+
+	err = t.session()
+	if err != nil {
+		return "", err
+	}
+	defer t.Session.Close()
+
+	stdout, err := t.Session.StdoutPipe()
+	if err != nil {
+		return "",err
+	}
+	err = t.Session.Run(cmd)
+	if err != nil {
+		return "",err
+	}
 	s := bufio.NewScanner(stdout)
+
+	buf:=""
 	for s.Scan() {
 		buf=buf+s.Text()+"\n"
 	}
-
 	return buf, nil
 }
 
 // https://stackoverflow.com/questions/21417223/simple-ssh-port-forward-in-golang
 func (t *SSH)LocalForward(ctx context.Context, localAdr string, remoteAdr string) error {
+	err := t.connect()
+	if err != nil {
+		return err
+	}
+	defer t.Client.Close()
+
+	err = t.session()
+	if err != nil {
+		return err
+	}
+	defer t.Session.Close()
 
 	localListener, err := net.Listen("tcp", localAdr)
 	if err != nil {
 		log.Fatalf("net.Listen failed: %v", err)
+		return err
 	}
 	defer localListener.Close()
 
@@ -156,7 +212,6 @@ func (t *SSH)LocalForward(ctx context.Context, localAdr string, remoteAdr string
 		<-chS // chSが帰ってくるまでブロッキング
 		<-chR // chRが帰ってくるまでブロッキング
 	}
-
 
 	L:
     for {

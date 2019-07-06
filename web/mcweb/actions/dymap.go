@@ -114,12 +114,7 @@ func (t *Dymap) RunPF() {
 			t.doneCh <- true
 		}()
 		ssh := NewSSH(t.conf.SSHconfig)
-		err := ssh.Connect()
-		if err != nil {
-			log.Printf("[dymap PF] ssh.Connect %v",err)
-			return
-		}
-		err = ssh.LocalForward(ctx, t.conf.Listen, "127.0.0.1:8123")
+		err := ssh.LocalForward(ctx, t.conf.Listen, "127.0.0.1:8123")
 		if err != nil {
 			log.Printf("[dymap PF] LocalForward %v",err)
 		}
