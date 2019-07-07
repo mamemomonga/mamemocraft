@@ -7,16 +7,32 @@ import (
 )
 
 type Config struct {
-	GCEKeyFile   string `yaml:"gce_key_file"`
-	GCEProject   string `yaml:"gce_project"`
-	GCEZone      string `yaml:"gce_zone"`
-	GCEInstance  string `yaml:"gce_instance"`
-	SSHKeyFile   string `yaml:"ssh_keyfile"`
-	SSHUser      string `yaml:"ssh_user"`
-	SSHHost      string `yaml:"ssh_host"`
-	SSHPort      string `yaml:"ssh_port"`
-	SyncAPPDir   string `yaml:"sync_app_dir"`
-	RConPassword string `yaml:"rcon_password"`
+	GCE  GCEType   `yaml:"gce"`
+	SSH  SSHType   `yaml:"ssh"`
+	Sync SyncType  `yaml:"sync"`
+	Rcon RconType  `yaml:"rcon"`
+}
+
+type GCEType struct {
+	KeyFile   string `yaml:"key_file"`
+	Project   string `yaml:"project"`
+	Zone      string `yaml:"zone"`
+	Instance  string `yaml:"instance"`
+}
+
+type SSHType struct {
+	KeyFile   string `yaml:"keyfile"`
+	User      string `yaml:"user"`
+	Host      string `yaml:"host"`
+	Port      string `yaml:"port"`
+}
+
+type SyncType struct {
+	APPDir   string `yaml:"app_dir"`
+}
+
+type RconType struct {
+	Password string `yaml:"password"`
 }
 
 func Load(filename string) (data *Config, err error) {
@@ -31,3 +47,4 @@ func Load(filename string) (data *Config, err error) {
 	log.Printf("Read: %s", filename)
 	return data, nil
 }
+

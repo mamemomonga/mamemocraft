@@ -54,22 +54,22 @@ func New(configFile string) *Actions {
 		log.Fatal(err)
 	}
 
-	t.rconPassword = config.RConPassword
+	t.rconPassword = config.Rcon.Password
 
 	t.gce = NewGCE()
-	err = t.gce.LoadCredentialsFile(config.GCEKeyFile)
+	err = t.gce.LoadCredentialsFile(config.GCE.KeyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
-	t.gce.Project  = config.GCEProject
-	t.gce.Zone     = config.GCEZone
-	t.gce.Instance = config.GCEInstance
+	t.gce.Project  = config.GCE.Project
+	t.gce.Zone     = config.GCE.Zone
+	t.gce.Instance = config.GCE.Instance
 
 	t.sshconf =  &SSHConfig{
-		KeyFile: config.SSHKeyFile,
-		User:    config.SSHUser,
-		Host:    config.SSHHost,
-		Port:    config.SSHPort,
+		KeyFile: config.SSH.KeyFile,
+		User:    config.SSH.User,
+		Host:    config.SSH.Host,
+		Port:    config.SSH.Port,
 		ConnectTimeout: 10,
 	}
 
@@ -80,7 +80,7 @@ func New(configFile string) *Actions {
 	})
 
 
-	t.sync = NewSync(config.SyncAPPDir)
+	t.sync = NewSync(config.Sync.APPDir)
 
 	t.mcRunning = false
 	t.mutex = new(sync.Mutex)
