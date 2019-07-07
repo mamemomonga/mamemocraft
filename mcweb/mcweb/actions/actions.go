@@ -59,6 +59,7 @@ func New(configFile string) *Actions {
 	}
 	t.dymap = NewDymap(&DymapConfig{
 		Listen:    c.Dymap.Listen,
+		Forward:   c.Dymap.Forward,
 		WebURL:    c.Dymap.WebURL,
 		SSHconfig: t.sshconf,
 	})
