@@ -11,12 +11,14 @@ import (
 )
 
 type Mastodon struct {
-	c      *MastodonConfig
-	client *mastodon.Client
-	Ready  bool
+	c          *MastodonConfig
+	client     *mastodon.Client
+	Ready      bool
+	lastToot   string
 }
 
 type MastodonConfig struct {
+	Enable     bool
 	Server     string
 	Email      string
 	Password   string
@@ -41,6 +43,10 @@ func NewMastodon(c *MastodonConfig) *Mastodon {
 }
 
 func (t *Mastodon) Connect() (err error) {
+	if ! t.c.Enable {
+		return nil
+	}
+
 	ctx := context.Background()
 
 	ccs := &ClientConfigs{
@@ -116,7 +122,13 @@ func (t *Mastodon) loadClientFile(cc *ClientConfigs) (err error) {
 }
 
 func (t *Mastodon) Toot(s string) error {
+	if ! t.c.Enable {
+		return nil
+	}
 	if ! t.Ready {
+		return nil
+	}
+	if t.lastToot == s {
 		return nil
 	}
 	ctx := context.Background()
@@ -126,6 +138,7 @@ func (t *Mastodon) Toot(s string) error {
 		return err
 	}
 	log.Printf("info: [Mastodon] Say: %s", toot.Status)
+	t.lastToot = s
 	return nil
 }
 

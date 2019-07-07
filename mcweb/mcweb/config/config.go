@@ -45,6 +45,7 @@ type DymapType struct {
 }
 
 type MastodonType struct {
+	Enable      string `yaml:"enable"`
 	Server      string `yaml:"server"`
 	Email       string `yaml:"email"`
 	Password    string `yaml:"password"`

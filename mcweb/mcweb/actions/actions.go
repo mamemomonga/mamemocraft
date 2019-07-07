@@ -35,7 +35,6 @@ type Actions struct {
 
 	dymap    *Dymap
 	mastodon *Mastodon
-	prevToot string
 
 }
 
@@ -109,16 +108,9 @@ func (t *Actions) setStateMessage(s int, m string) {
 }
 
 func (t *Actions) toot(s string) {
-
-	if t.prevToot == s {
-		return
-	}
-
 	if err := t.mastodon.Toot( fmt.Sprintf("[まめもくらふと] %s ﾖｼ :genbaneko:",s)); err != nil {
 		log.Printf("alert: [Mastodon] %s", err)
 	}
-
-	t.prevToot = s
 }
 
 
