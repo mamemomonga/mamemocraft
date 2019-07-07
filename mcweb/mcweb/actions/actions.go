@@ -74,8 +74,8 @@ func New(configFile string) *Actions {
 	}
 
 	t.dymap = NewDymap(&DymapConfig{
-		Listen: "127.0.0.1:5006",
-		WebURL: "https://mamemocraft-beta.mamemo.online/",
+		Listen: config.Dymap.Listen,
+		WebURL: config.Dymap.WebURL,
 		SSHconfig: t.sshconf,
 	})
 

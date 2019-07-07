@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	GCE  GCEType   `yaml:"gce"`
-	SSH  SSHType   `yaml:"ssh"`
-	Sync SyncType  `yaml:"sync"`
-	Rcon RconType  `yaml:"rcon"`
+	GCE   GCEType   `yaml:"gce"`
+	SSH   SSHType   `yaml:"ssh"`
+	Sync  SyncType  `yaml:"sync"`
+	Rcon  RconType  `yaml:"rcon"`
+	Dymap DymapType `yaml:"dymap"`
 }
 
 type GCEType struct {
@@ -36,8 +37,8 @@ type RconType struct {
 	Password string `yaml:"password"`
 }
 
-type DymayType struct {
-	Listen     string `yaml:"listgen"`
+type DymapType struct {
+	Listen     string `yaml:"listen"`
 	Forward    string `yaml:"forward"`
 	WebURL     string `yaml:"weburl"`
 }
