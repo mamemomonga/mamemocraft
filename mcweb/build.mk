@@ -62,7 +62,7 @@ vendor:
 
 # 掃除
 clean:
-	$(RM) -r $(BINDIR)
+	$(RM) $(BINDIR)/$(NAME)
 
 # Dockerでビルド
 docker:
