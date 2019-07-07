@@ -81,8 +81,10 @@ func New(configFile string) *Actions {
 		SSHconfig: t.sshconf,
 	})
 
-	t.sync = NewSync(config.Sync)
-
+	t.sync = NewSync(&SyncConfig{
+		Enable: config.Sync.Enable,
+		APPDir: config.Sync.APPDir,
+	})
 
 	t.mastodon = NewMastodon( &MastodonConfig{
 		Server:     config.Mastodon.Server,

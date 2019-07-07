@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/config"
 )
 
 type Sync struct {
@@ -19,7 +18,12 @@ type Sync struct {
 	enable  bool
 }
 
-func NewSync(c config.SyncType)(*Sync) {
+type SyncConfig struct {
+	Enable   bool   `yaml:"enable"`
+	APPDir   string `yaml:"app_dir"`
+}
+
+func NewSync(c *SyncConfig)(*Sync) {
 	t := new(Sync)
 	t.enable = c.Enable
 	t.appdir = c.APPDir
