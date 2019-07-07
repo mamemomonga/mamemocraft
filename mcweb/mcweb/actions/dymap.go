@@ -2,30 +2,30 @@ package actions
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
-	"fmt"
 )
 
 const DymapModeNone = 0
-const DymapModeWeb  = 1
-const DymapModePF   = 2
+const DymapModeWeb = 1
+const DymapModePF = 2
 
 type Dymap struct {
-	conf    *DymapConfig
-	mode    int
-	cancel  context.CancelFunc
-	doneCh  chan bool
+	conf   *DymapConfig
+	mode   int
+	cancel context.CancelFunc
+	doneCh chan bool
 }
 
 type DymapConfig struct {
-	Listen     string
-	Forward    string
-	WebURL     string
-	SSHconfig  *SSHConfig
+	Listen    string
+	Forward   string
+	WebURL    string
+	SSHconfig *SSHConfig
 }
 
-func NewDymap(conf *DymapConfig)(*Dymap) {
+func NewDymap(conf *DymapConfig) *Dymap {
 	t := new(Dymap)
 	t.conf = conf
 	t.mode = DymapModeNone
@@ -33,7 +33,7 @@ func NewDymap(conf *DymapConfig)(*Dymap) {
 }
 
 func (t *Dymap) webHandleIndex(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w,`
+	fmt.Fprintf(w, `
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -49,7 +49,6 @@ func (t *Dymap) webHandleIndex(w http.ResponseWriter, r *http.Request) {
 `, t.conf.WebURL)
 }
 
-
 func (t *Dymap) RunWeb() {
 	if t.mode == DymapModeWeb {
 		return
@@ -60,12 +59,12 @@ func (t *Dymap) RunWeb() {
 		<-t.doneCh // PFの終了までブロック
 	}
 	t.doneCh = make(chan bool)
-	t.mode   = DymapModeWeb
+	t.mode = DymapModeWeb
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", t.webHandleIndex)
 	srv := &http.Server{
-		Addr: t.conf.Listen,
+		Addr:    t.conf.Listen,
 		Handler: mux,
 	}
 
@@ -73,7 +72,7 @@ func (t *Dymap) RunWeb() {
 	t.cancel = cancel
 
 	go func() {
-		log.Printf("info: [dymap Web] START %s ",t.conf.Listen)
+		log.Printf("info: [dymap Web] START %s ", t.conf.Listen)
 		defer func() {
 			log.Println("info: [dymap Web] STOP")
 			t.mode = DymapModeNone
@@ -81,7 +80,7 @@ func (t *Dymap) RunWeb() {
 		}()
 		err := srv.ListenAndServe()
 		if err != nil {
-			log.Printf("alert: [dymap Web] %v",err)
+			log.Printf("alert: [dymap Web] %v", err)
 		}
 	}()
 
@@ -102,7 +101,7 @@ func (t *Dymap) RunPF() {
 		<-t.doneCh // Webの停止までブロック
 	}
 	t.doneCh = make(chan bool)
-	t.mode   = DymapModePF
+	t.mode = DymapModePF
 
 	ctx, cancel := context.WithCancel(context.Background())
 	t.cancel = cancel
@@ -117,8 +116,7 @@ func (t *Dymap) RunPF() {
 		ssh := NewSSH(t.conf.SSHconfig)
 		err := ssh.LocalForward(ctx, t.conf.Listen, t.conf.Forward)
 		if err != nil {
-			log.Printf("alert: [dymap PF] LocalForward %v",err)
+			log.Printf("alert: [dymap PF] LocalForward %v", err)
 		}
 	}()
 }
-

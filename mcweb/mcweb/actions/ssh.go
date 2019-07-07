@@ -4,27 +4,27 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"bufio"
-	"io/ioutil"
-	"time"
-	"log"
-	"net"
-	"io"
 	"context"
 	"fmt"
-//	"github.com/davecgh/go-spew/spew"
+	"io"
+	"io/ioutil"
+	"log"
+	"net"
+	"time"
+	//	"github.com/davecgh/go-spew/spew"
 )
 
 type SSH struct {
-	conf     *SSHConfig
-	Client   *ssh.Client
-	Session  *ssh.Session
+	conf    *SSHConfig
+	Client  *ssh.Client
+	Session *ssh.Session
 }
 
 type SSHConfig struct {
-	KeyFile string
-	User    string
-	Host    string
-	Port    string
+	KeyFile        string
+	User           string
+	Host           string
+	Port           string
 	ConnectTimeout int
 }
 
@@ -34,7 +34,7 @@ func NewSSH(c *SSHConfig) *SSH {
 	return t
 }
 
-func (t *SSH)connect() (err error) {
+func (t *SSH) connect() (err error) {
 	auth := []ssh.AuthMethod{}
 	{
 		key, err := ioutil.ReadFile(t.conf.KeyFile)
@@ -53,7 +53,7 @@ func (t *SSH)connect() (err error) {
 		Timeout:         time.Second * time.Duration(t.conf.ConnectTimeout),
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	client, err := ssh.Dial("tcp", t.conf.Host + ":" + t.conf.Port, sshConfig)
+	client, err := ssh.Dial("tcp", t.conf.Host+":"+t.conf.Port, sshConfig)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (t *SSH)connect() (err error) {
 	return nil
 }
 
-func (t *SSH)session() (err error) {
+func (t *SSH) session() (err error) {
 	t.Session, err = t.Client.NewSession()
 	if err != nil {
 		return err
@@ -69,11 +69,11 @@ func (t *SSH)session() (err error) {
 	return nil
 }
 
-func (t *SSH)SessionClose() {
+func (t *SSH) SessionClose() {
 	t.Session.Close()
 }
 
-func (t *SSH)GetExitBool(cmd string) (bool,error) {
+func (t *SSH) GetExitBool(cmd string) (bool, error) {
 	err := t.connect()
 	if err != nil {
 		return false, err
@@ -88,25 +88,25 @@ func (t *SSH)GetExitBool(cmd string) (bool,error) {
 
 	err = t.Session.Run(cmd)
 	if err != nil {
-		if ee,ok := err.(*ssh.ExitError); ok {
+		if ee, ok := err.(*ssh.ExitError); ok {
 			if ee.Waitmsg.ExitStatus() == 1 {
-				return true,nil
+				return true, nil
 			}
 		}
-		return false,err
+		return false, err
 	}
-	return false,nil
+	return false, nil
 }
 
-func (t *SSH)FileExists(path string) (bool,error) {
-	ne,err := t.GetExitBool(fmt.Sprintf("test -e %s",path))
+func (t *SSH) FileExists(path string) (bool, error) {
+	ne, err := t.GetExitBool(fmt.Sprintf("test -e %s", path))
 	if err != nil {
 		return false, err
 	}
-	return !ne,nil
+	return !ne, nil
 }
 
-func (t *SSH)GetStdout(cmd string) (string, error) {
+func (t *SSH) GetStdout(cmd string) (string, error) {
 	err := t.connect()
 	if err != nil {
 		return "", err
@@ -121,23 +121,23 @@ func (t *SSH)GetStdout(cmd string) (string, error) {
 
 	stdout, err := t.Session.StdoutPipe()
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	err = t.Session.Run(cmd)
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	s := bufio.NewScanner(stdout)
 
-	buf:=""
+	buf := ""
 	for s.Scan() {
-		buf=buf+s.Text()+"\n"
+		buf = buf + s.Text() + "\n"
 	}
 	return buf, nil
 }
 
 // https://stackoverflow.com/questions/21417223/simple-ssh-port-forward-in-golang
-func (t *SSH)LocalForward(ctx context.Context, localAdr string, remoteAdr string) error {
+func (t *SSH) LocalForward(ctx context.Context, localAdr string, remoteAdr string) error {
 	err := t.connect()
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func (t *SSH)LocalForward(ctx context.Context, localAdr string, remoteAdr string
 
 		defer func() {
 			if err := recover(); err != nil {
-				log.Printf("Runtime Err: %v",err)
+				log.Printf("Runtime Err: %v", err)
 				chDone <- true
 				return
 			}
@@ -184,7 +184,7 @@ func (t *SSH)LocalForward(ctx context.Context, localAdr string, remoteAdr string
 		go func() {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Printf("[L->D] Runtime Err: %v",err)
+					log.Printf("[L->D] Runtime Err: %v", err)
 					return
 				}
 			}()
@@ -198,7 +198,7 @@ func (t *SSH)LocalForward(ctx context.Context, localAdr string, remoteAdr string
 		go func() {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Printf("[D->L] Runtime Err: %v",err)
+					log.Printf("[D->L] Runtime Err: %v", err)
 					return
 				}
 			}()
@@ -213,8 +213,8 @@ func (t *SSH)LocalForward(ctx context.Context, localAdr string, remoteAdr string
 		<-chR // chRが帰ってくるまでブロッキング
 	}
 
-	L:
-    for {
+L:
+	for {
 
 		localConn, err := localListener.Accept()
 		if err != nil {
@@ -224,11 +224,11 @@ func (t *SSH)LocalForward(ctx context.Context, localAdr string, remoteAdr string
 		go forward(localConn)
 
 		select {
-			case <-ctx.Done():
-				break L
-			case <-chDone:
-				break L
-			default:
+		case <-ctx.Done():
+			break L
+		case <-chDone:
+			break L
+		default:
 		}
 
 	}

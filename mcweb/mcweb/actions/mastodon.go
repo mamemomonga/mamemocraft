@@ -11,10 +11,10 @@ import (
 )
 
 type Mastodon struct {
-	c          *MastodonConfig
-	client     *mastodon.Client
-	Ready      bool
-	lastToot   string
+	c        *MastodonConfig
+	client   *mastodon.Client
+	Ready    bool
+	lastToot string
 }
 
 type MastodonConfig struct {
@@ -43,7 +43,7 @@ func NewMastodon(c *MastodonConfig) *Mastodon {
 }
 
 func (t *Mastodon) Connect() (err error) {
-	if ! t.c.Enable {
+	if !t.c.Enable {
 		return nil
 	}
 
@@ -53,7 +53,7 @@ func (t *Mastodon) Connect() (err error) {
 		Tokens: make(map[string]ClientTokens),
 	}
 
-	if _, err := os.Stat(t.c.ClientFile); ! os.IsNotExist(err) {
+	if _, err := os.Stat(t.c.ClientFile); !os.IsNotExist(err) {
 		if err := t.loadClientFile(ccs); err != nil {
 			return err
 		}
@@ -87,10 +87,10 @@ func (t *Mastodon) Connect() (err error) {
 	if err != nil {
 		return err
 	}
-	log.Printf("info: [Mastodon] Server:      %s",t.c.Server)
-	log.Printf("info: [Mastodon] SelfID:      %s",account.ID)
-	log.Printf("info: [Mastodon] Username:    %s",account.Username)
-	log.Printf("info: [Mastodon] DisplayName: %s",account.DisplayName)
+	log.Printf("info: [Mastodon] Server:      %s", t.c.Server)
+	log.Printf("info: [Mastodon] SelfID:      %s", account.ID)
+	log.Printf("info: [Mastodon] Username:    %s", account.Username)
+	log.Printf("info: [Mastodon] DisplayName: %s", account.DisplayName)
 	t.Ready = true
 	return nil
 }
@@ -122,18 +122,18 @@ func (t *Mastodon) loadClientFile(cc *ClientConfigs) (err error) {
 }
 
 func (t *Mastodon) Toot(s string) error {
-	if ! t.c.Enable {
+	if !t.c.Enable {
 		return nil
 	}
-	if ! t.Ready {
+	if !t.Ready {
 		return nil
 	}
 	if t.lastToot == s {
 		return nil
 	}
 	ctx := context.Background()
-	toot := mastodon.Toot{ Status: s }
-	_, err := t.client.PostStatus( ctx, &toot )
+	toot := mastodon.Toot{Status: s}
+	_, err := t.client.PostStatus(ctx, &toot)
 	if err != nil {
 		return err
 	}
@@ -141,4 +141,3 @@ func (t *Mastodon) Toot(s string) error {
 	t.lastToot = s
 	return nil
 }
-

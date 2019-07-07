@@ -11,14 +11,14 @@ type GCE struct {
 	ctx      context.Context
 	compute  *compute.Service
 	instance *compute.InstancesService
-	c *GCEConfig
+	c        *GCEConfig
 }
 
 type GCEConfig struct {
 	CredentialsFile string
-	Project  string
-	Zone     string
-	Instance string
+	Project         string
+	Zone            string
+	Instance        string
 }
 
 // NewGCE New GCE Control utility
@@ -58,4 +58,3 @@ func (t *GCE) Start() (*compute.Operation, error) {
 func (t *GCE) Stop() (*compute.Operation, error) {
 	return t.instance.Stop(t.c.Project, t.c.Zone, t.c.Instance).Do()
 }
-

@@ -1,14 +1,14 @@
 package actions
 
-import(
+import (
+	"log"
 	"regexp"
 	"strconv"
-	"log"
 	"time"
 )
 
 type Players struct {
-	c *PlayersConfig
+	c      *PlayersConfig
 	Remain int
 	Count  int
 }
@@ -34,7 +34,7 @@ func (t *Players) Start() {
 	t.Reset()
 	for {
 		if *t.c.MCRunning {
-			log.Printf("[PlayersZero] Remain: %d",t.Remain)
+			log.Printf("[PlayersZero] Remain: %d", t.Remain)
 			if t.Remain == 0 {
 				t.c.Shutdown()
 			} else {
@@ -44,20 +44,19 @@ func (t *Players) Start() {
 			log.Printf("[PlayersZero] MC Not Running")
 		}
 
-		time.Sleep( time.Minute )
+		time.Sleep(time.Minute)
 	}
 }
 
 func (t *Players) Check(buf string) {
-	log.Printf("[Players] %s",buf)
+	log.Printf("[Players] %s", buf)
 	rex := regexp.MustCompile(`^There are (\d+) of a max (\d+) players online:`)
 	match := rex.FindStringSubmatch(buf)
-	current,_ := strconv.Atoi(match[1])
+	current, _ := strconv.Atoi(match[1])
 	t.Count = current
 
-	log.Printf("[Players] Current %d",t.Count)
+	log.Printf("[Players] Current %d", t.Count)
 	if t.Count > 0 {
 		t.Reset()
 	}
 }
-

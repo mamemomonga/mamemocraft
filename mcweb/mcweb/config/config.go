@@ -18,22 +18,22 @@ type Config struct {
 }
 
 type GCEType struct {
-	KeyFile   string `yaml:"keyfile"`
-	Project   string `yaml:"project"`
-	Zone      string `yaml:"zone"`
-	Instance  string `yaml:"instance"`
+	KeyFile  string `yaml:"keyfile"`
+	Project  string `yaml:"project"`
+	Zone     string `yaml:"zone"`
+	Instance string `yaml:"instance"`
 }
 
 type SSHType struct {
-	KeyFile   string `yaml:"keyfile"`
-	User      string `yaml:"user"`
-	Host      string `yaml:"host"`
-	Port      string `yaml:"port"`
+	KeyFile string `yaml:"keyfile"`
+	User    string `yaml:"user"`
+	Host    string `yaml:"host"`
+	Port    string `yaml:"port"`
 }
 
 type SyncType struct {
-	Enable   bool   `yaml:"enable"`
-	APPDir   string `yaml:"app_dir"`
+	Enable bool   `yaml:"enable"`
+	APPDir string `yaml:"app_dir"`
 }
 
 type RconType struct {
@@ -41,25 +41,24 @@ type RconType struct {
 }
 
 type DymapType struct {
-	Listen     string `yaml:"listen"`
-	Forward    string `yaml:"forward"`
-	WebURL     string `yaml:"weburl"`
+	Listen  string `yaml:"listen"`
+	Forward string `yaml:"forward"`
+	WebURL  string `yaml:"weburl"`
 }
 
 type MastodonType struct {
-	Enable      bool   `yaml:"enable"`
-	Server      string `yaml:"server"`
-	Email       string `yaml:"email"`
-	Password    string `yaml:"password"`
-	ClientFile  string `yaml:"client_file"`
-	ClientName  string `yaml:"client_name"`
+	Enable     bool   `yaml:"enable"`
+	Server     string `yaml:"server"`
+	Email      string `yaml:"email"`
+	Password   string `yaml:"password"`
+	ClientFile string `yaml:"client_file"`
+	ClientName string `yaml:"client_name"`
 }
 
 type PlayersType struct {
-	ZeroShutdown bool `yaml:"zero_shutdown"`
-	ZeroShutdownCount int `yaml:"zero_shutdown_count"`
+	ZeroShutdown      bool `yaml:"zero_shutdown"`
+	ZeroShutdownCount int  `yaml:"zero_shutdown_count"`
 }
-
 
 func Load(filename string) (data *Config, err error) {
 	buf, err := ioutil.ReadFile(filename)
@@ -73,4 +72,3 @@ func Load(filename string) (data *Config, err error) {
 	log.Printf("Read: %s", filename)
 	return data, nil
 }
-

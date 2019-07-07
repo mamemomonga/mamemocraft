@@ -1,10 +1,10 @@
 package actions_test
 
 import (
-	"log"
-	"testing"
 	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/actions"
 	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/config"
+	"log"
+	"testing"
 )
 
 // go test -v --count=1 mcweb/actions/mastodon_test.go
@@ -12,7 +12,7 @@ import (
 var don *actions.Mastodon
 
 func init() {
-	c,err := config.Load("../../etc/config.yaml")
+	c, err := config.Load("../../etc/config.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func init() {
 		ClientFile: "../../etc/mastodon.json",
 		ClientName: c.Mastodon.ClientName,
 	}
-	don = actions.NewMastodon( &mastodon_config )
+	don = actions.NewMastodon(&mastodon_config)
 	if err := don.Connect(); err != nil {
 		log.Fatal(err)
 	}
@@ -34,4 +34,3 @@ func init() {
 func TestMastodon01(t *testing.T) {
 	don.Toot("テスト")
 }
-
