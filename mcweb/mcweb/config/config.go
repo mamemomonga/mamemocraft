@@ -7,12 +7,13 @@ import (
 )
 
 type Config struct {
-	GCE      GCEType      `yaml:"gce"`
-	SSH      SSHType      `yaml:"ssh"`
-	Sync     SyncType     `yaml:"sync"`
-	Rcon     RconType     `yaml:"rcon"`
-	Dymap    DymapType    `yaml:"dymap"`
-	Mastodon MastodonType `yaml:"mastodon"`
+	GCE        GCEType      `yaml:"gce"`
+	SSH        SSHType      `yaml:"ssh"`
+	Sync       SyncType     `yaml:"sync"`
+	Rcon       RconType     `yaml:"rcon"`
+	Dymap      DymapType    `yaml:"dymap"`
+	Mastodon   MastodonType `yaml:"mastodon"`
+	AutoReboot bool         `yaml:"auto_reboot"`
 }
 
 type GCEType struct {
@@ -45,7 +46,7 @@ type DymapType struct {
 }
 
 type MastodonType struct {
-	Enable      string `yaml:"enable"`
+	Enable      bool   `yaml:"enable"`
 	Server      string `yaml:"server"`
 	Email       string `yaml:"email"`
 	Password    string `yaml:"password"`

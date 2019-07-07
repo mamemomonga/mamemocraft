@@ -36,9 +36,10 @@ type Actions struct {
 	dymap    *Dymap
 	mastodon *Mastodon
 
+	autoReboot bool
+
 }
 
-const AutoReboot = true
 const PlayersZeroEnable = true
 const PlayersZeroMax = 10 // プレイヤーゼロが継続したらシャットダウン
 
@@ -55,17 +56,12 @@ func New(configFile string) *Actions {
 		log.Fatal(err)
 	}
 
-	t.rconPassword = config.Rcon.Password
-
-	t.gce = NewGCE()
-	err = t.gce.LoadCredentialsFile(config.GCE.KeyFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	t.gce.Project  = config.GCE.Project
-	t.gce.Zone     = config.GCE.Zone
-	t.gce.Instance = config.GCE.Instance
-
+	t.gce = NewGCE(&GCEConfig{
+		CredentialsFile: config.GCE.KeyFile,
+		Project:         config.GCE.Project,
+		Zone:            config.GCE.Zone,
+		Instance:        config.GCE.Instance,
+	})
 	t.sshconf =  &SSHConfig{
 		KeyFile: config.SSH.KeyFile,
 		User:    config.SSH.User,
@@ -73,48 +69,58 @@ func New(configFile string) *Actions {
 		Port:    config.SSH.Port,
 		ConnectTimeout: 10,
 	}
-
 	t.dymap = NewDymap(&DymapConfig{
 		Listen: config.Dymap.Listen,
 		WebURL: config.Dymap.WebURL,
 		SSHconfig: t.sshconf,
 	})
 
+	t.rconPassword = config.Rcon.Password
+	t.mcRunning = false
+	t.mutex = new(sync.Mutex)
+
+	if config.AutoReboot {
+		log.Printf("info: [Config] AutoReboot Mode ON")
+	} else {
+		log.Printf("info: [Config] AutoReboot Mode OFF")
+	}
+	t.autoReboot = config.AutoReboot
+
+	if config.Sync.Enable {
+		log.Printf("info: [Config] Sync ON")
+	} else {
+		log.Printf("info: [Config] Sync OFF")
+	}
 	t.sync = NewSync(&SyncConfig{
 		Enable: config.Sync.Enable,
 		APPDir: config.Sync.APPDir,
 	})
 
+	if config.Mastodon.Enable {
+		log.Printf("info: [Config] Mastodon ON")
+	} else {
+		log.Printf("info: [Config] Mastodon OFF")
+	}
 	t.mastodon = NewMastodon( &MastodonConfig{
+		Enable:     config.Mastodon.Enable,
 		Server:     config.Mastodon.Server,
 		Email:      config.Mastodon.Email,
 		Password:   config.Mastodon.Password,
 		ClientFile: config.Mastodon.ClientFile,
 		ClientName: config.Mastodon.ClientName,
 	})
-
-	t.mcRunning = false
-	t.mutex = new(sync.Mutex)
-	t.setStateMessage( StatusLoading, "準備中です。しばらくおまちください。")
-
 	return t
 }
 
-func (t *Actions) setStateMessage(s int, m string) {
-	t.mutex.Lock()
-	t.state = s
-	t.message = m
-	t.mutex.Unlock()
-}
-
-func (t *Actions) toot(s string) {
-	if err := t.mastodon.Toot( fmt.Sprintf("[まめもくらふと] %s ﾖｼ :genbaneko:",s)); err != nil {
-		log.Printf("alert: [Mastodon] %s", err)
-	}
-}
-
-
 func (t *Actions) Run() {
+
+	t.setStateMessage( StatusLoading, "準備中です。しばらくおまちください。")
+
+	err := t.gce.LoadCredentialsFile()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	t.doStatus = true
 	t.playersZeroRemain = PlayersZeroMax
 
@@ -140,6 +146,21 @@ func (t *Actions) Run() {
 	}
 	w.Run() // ブロック
 }
+
+
+func (t *Actions) setStateMessage(s int, m string) {
+	t.mutex.Lock()
+	t.state = s
+	t.message = m
+	t.mutex.Unlock()
+}
+
+func (t *Actions) toot(s string) {
+	if err := t.mastodon.Toot( fmt.Sprintf("[まめもくらふと] %s ﾖｼ :genbaneko:",s)); err != nil {
+		log.Printf("alert: [Mastodon] %s", err)
+	}
+}
+
 
 func (t *Actions) Runner() {
 
@@ -259,7 +280,7 @@ func (t *Actions) mcStatus() bool {
 	if stop {
 		t.setStateMessage( StatusLoading, "Minecraft Serverがとまってます😭")
 		log.Printf("[SSH] mamemocraft is stop")
-		if AutoReboot {
+		if t.autoReboot {
 			_,_ = NewSSH(t.sshconf).GetExitBool("sudo /sbin/reboot")
 			log.Printf("[SSH] mamemocraft is rebooting")
 			time.Sleep(time.Second * 30)

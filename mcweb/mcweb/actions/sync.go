@@ -28,13 +28,6 @@ func NewSync(c *SyncConfig)(*Sync) {
 	t.enable = c.Enable
 	t.appdir = c.APPDir
 	t.m = new(sync.Mutex)
-
-	if t.enable {
-		log.Printf("info: [Sync] Enable")
-	} else {
-		log.Printf("info: [Sync] Disable")
-	}
-
 	return t
 }
 
