@@ -84,6 +84,11 @@ func New(configFile string) *Actions {
 		Shutdown: func() {
 			_, _ = NewSSH(t.sshconf).GetExitBool("sudo /sbin/poweroff")
 		},
+		Toot: func(s string) {
+			if err := t.mastodon.Toot(fmt.Sprintf("[まめもくらふと] %s ﾖｼ :genbaneko:", s)); err != nil {
+				log.Printf("alert: [Mastodon] %s", err)
+			}
+		},
 	})
 
 	t.configBoolInfo(c.Mastodon.Enable, "Mastodon")
@@ -145,7 +150,7 @@ func (t *Actions) setStateMessage(s int, m string) {
 }
 
 func (t *Actions) toot(s string) {
-	if err := t.mastodon.Toot(fmt.Sprintf("[まめもくらふと] %s ﾖｼ :genbaneko:", s)); err != nil {
+	if err := t.mastodon.TootNoDup(fmt.Sprintf("[まめもくらふと] %s ﾖｼ :genbaneko:", s)); err != nil {
 		log.Printf("alert: [Mastodon] %s", err)
 	}
 }
@@ -160,7 +165,7 @@ func (t *Actions) Runner() {
 			t.runnerDoStatus()
 		}
 		if t.mcRunning {
-			cmd := fmt.Sprintf("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p %s list", t.rconPassword)
+			cmd := fmt.Sprintf("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p %s -c list", t.rconPassword)
 			buf, err := NewSSH(t.sshconf).GetStdout(cmd)
 			if err == nil {
 				t.players.Check(buf)

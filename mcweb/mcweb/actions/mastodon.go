@@ -121,14 +121,22 @@ func (t *Mastodon) loadClientFile(cc *ClientConfigs) (err error) {
 	return nil
 }
 
+func (t *Mastodon) TootNoDup(s string) error {
+	if t.lastToot == s {
+		return nil
+	}
+	if err := t.Toot(s); err != nil {
+		return err
+	}
+	t.lastToot = s
+	return nil
+}
+
 func (t *Mastodon) Toot(s string) error {
 	if !t.c.Enable {
 		return nil
 	}
 	if !t.Ready {
-		return nil
-	}
-	if t.lastToot == s {
 		return nil
 	}
 	ctx := context.Background()
@@ -138,6 +146,5 @@ func (t *Mastodon) Toot(s string) error {
 		return err
 	}
 	log.Printf("info: [Mastodon] Say: %s", toot.Status)
-	t.lastToot = s
 	return nil
 }
