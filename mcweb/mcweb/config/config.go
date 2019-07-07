@@ -36,6 +36,13 @@ type RconType struct {
 	Password string `yaml:"password"`
 }
 
+type DymayType struct {
+	Listen     string `yaml:"listgen"`
+	Forward    string `yaml:"forward"`
+	WebURL     string `yaml:"weburl"`
+}
+
+
 func Load(filename string) (data *Config, err error) {
 	buf, err := ioutil.ReadFile(filename)
 	if err != nil {

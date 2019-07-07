@@ -20,6 +20,7 @@ type Dymap struct {
 
 type DymapConfig struct {
 	Listen     string
+	Forward    string
 	WebURL     string
 	SSHconfig  *SSHConfig
 }
@@ -72,15 +73,15 @@ func (t *Dymap) RunWeb() {
 	t.cancel = cancel
 
 	go func() {
-		log.Printf("[dymap Web] START %s ",t.conf.Listen)
+		log.Printf("info: [dymap Web] START %s ",t.conf.Listen)
 		defer func() {
-			log.Println("[dymap Web] STOP")
+			log.Println("info: [dymap Web] STOP")
 			t.mode = DymapModeNone
 			t.doneCh <- true
 		}()
 		err := srv.ListenAndServe()
 		if err != nil {
-			log.Printf("[dymap Web] %v",err)
+			log.Printf("alert: [dymap Web] %v",err)
 		}
 	}()
 
@@ -107,16 +108,16 @@ func (t *Dymap) RunPF() {
 	t.cancel = cancel
 
 	go func() {
-		log.Printf("[dymap PF] START %s ", t.conf.Listen)
+		log.Printf("info: [dymap PF] START %s ", t.conf.Listen)
 		defer func() {
-			log.Println("[dymap PF] STOP")
+			log.Println("info: [dymap PF] STOP")
 			t.mode = DymapModeNone
 			t.doneCh <- true
 		}()
 		ssh := NewSSH(t.conf.SSHconfig)
-		err := ssh.LocalForward(ctx, t.conf.Listen, "127.0.0.1:8123")
+		err := ssh.LocalForward(ctx, t.conf.Listen, t.conf.Forward)
 		if err != nil {
-			log.Printf("[dymap PF] LocalForward %v",err)
+			log.Printf("alert: [dymap PF] LocalForward %v",err)
 		}
 	}()
 }
