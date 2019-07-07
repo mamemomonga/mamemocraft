@@ -34,6 +34,7 @@ type Actions struct {
 	rconPassword string
 
 	dymap    *Dymap
+	mastodon *Mastodon
 
 }
 
@@ -81,9 +82,19 @@ func New(configFile string) *Actions {
 
 	t.sync = NewSync(config.Sync)
 
+
+	t.mastodon = actions.NewMastodon( &MastodonConfig{
+		Server:     config.Mastodon.Server,
+		Email:      config.Mastodon.Email,
+		Password:   config.Mastodon.Password,
+		ClientFile: config.Mastodon.ClientFile,
+		ClientName: config.Mastodon.ClientName,
+	})
+
 	t.mcRunning = false
 	t.mutex = new(sync.Mutex)
 	t.setStateMessage( StatusLoading, "準備中です。しばらくおまちください。")
+
 	return t
 }
 
@@ -109,13 +120,16 @@ func (t *Actions) Run() {
 	w.CbStatus = t.Status
 	w.CbStart  = t.Start
 
+	if err := t.mastodon.Connect(); err != nil {
+		log.Printf("alert: [Mastodon] %s",err)
+	}
+
 	w.TPData = map[string]string {
 		"AppName": "mamemocraft-web",
 		"Version": buildinfo.Version,
 		"Revision": buildinfo.Revision,
 	}
-
-	w.Run()
+	w.Run() // ブロック
 }
 
 func (t *Actions) Runner() {
