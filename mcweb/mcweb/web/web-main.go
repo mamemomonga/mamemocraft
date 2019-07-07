@@ -13,6 +13,7 @@ type WebMain struct {
 	Server     *http.Server
 	CbStatus   func()(int, string)
 	CbStart    func()(int, string)
+	TPData     interface{}
 }
 
 const Debug = false
@@ -50,8 +51,7 @@ func (t *WebMain) handleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tp, err := template.New("T").Parse(s)
-	var v interface{}
-	err = tp.Execute(w,v)
+	err = tp.Execute(w,t.TPData)
 
 	log.Printf("[WebMain INDEX] %s %d %s",r.RemoteAddr,200,r.RequestURI)
 	if err != nil {

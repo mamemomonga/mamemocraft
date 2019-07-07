@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/web"
 	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/config"
+	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/buildinfo"
 )
 
 type Actions struct {
@@ -44,7 +45,6 @@ const StatusUnknown  = 0
 const StatusStop     = 1
 const StatusLoading  = 2
 const StatusRunning  = 3
-
 
 func New(configFile string) *Actions {
 	t := new(Actions)
@@ -108,6 +108,13 @@ func (t *Actions) Run() {
 	w := web.NewWebMain("127.0.0.1:5005")
 	w.CbStatus = t.Status
 	w.CbStart  = t.Start
+
+	w.TPData = map[string]string {
+		"AppName": "mamemocraft-web",
+		"Version": buildinfo.Version,
+		"Revision": buildinfo.Revision,
+	}
+
 	w.Run()
 }
 
