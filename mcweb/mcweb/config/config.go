@@ -28,6 +28,7 @@ type SSHType struct {
 }
 
 type SyncType struct {
+	Enable   bool   `yaml:"enable"`
 	APPDir   string `yaml:"app_dir"`
 }
 

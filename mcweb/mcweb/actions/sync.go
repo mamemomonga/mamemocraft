@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/config"
 )
 
 type Sync struct {
@@ -15,31 +16,44 @@ type Sync struct {
 	ready   bool
 	m       *sync.Mutex
 	appdir  string
+	enable  bool
 }
 
-func NewSync(ad string)(*Sync) {
+func NewSync(c config.SyncType)(*Sync) {
 	t := new(Sync)
-	t.appdir = ad
+	t.enable = c.Enable
+	t.appdir = c.APPDir
 	t.m = new(sync.Mutex)
+
+	if t.enable {
+		log.Printf("info: [Sync] Enable")
+	} else {
+		log.Printf("info: [Sync] Disable")
+	}
+
 	return t
 }
 
 func (t *Sync) Start(ctx context.Context) {
 
+	if ! t.enable {
+		return
+	}
+
 	time.Sleep( time.Second * 10 )
-	log.Printf("[SYNC] Start")
+	log.Printf("info: [Sync] Start")
 
 	doit := func() {
-		log.Printf("[SYNC] %d",t.counter)
+		log.Printf("debug: [Sync] %d min.",t.counter)
 		switch t.counter {
 		case 10:
-		log.Printf("[SYNC] data file sync1")
-		t.runSync()
+			log.Printf("info: [Sync] Run FIRST")
+			t.runSync()
 
 		case 70:
-		log.Printf("[SYNC] data file sync2")
-		t.runSync()
-		t.counter=11
+			log.Printf("info: [Sync] Run NORMAL")
+			t.runSync()
+			t.counter=11
 		}
 	}
 	T:
@@ -58,14 +72,14 @@ func (t *Sync) Start(ctx context.Context) {
 		default:
 		}
 	}
-	log.Printf("[SYNC] Terminate")
+	log.Printf("alert: [Sync] Terminate")
 }
 
 
 func (t *Sync) runSync() {
 	err := t.runCommand( filepath.Join(t.appdir,"bin/sync.sh"))
 	if err != nil {
-		log.Printf("[SYNC] ERR %s",err)
+		log.Printf("alert: [Sync] ERR %s",err)
 	}
 }
 

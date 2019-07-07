@@ -79,8 +79,7 @@ func New(configFile string) *Actions {
 		SSHconfig: t.sshconf,
 	})
 
-
-	t.sync = NewSync(config.Sync.APPDir)
+	t.sync = NewSync(config.Sync)
 
 	t.mcRunning = false
 	t.mutex = new(sync.Mutex)
