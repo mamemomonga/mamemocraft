@@ -6,8 +6,7 @@ import (
 	"time"
 	"sync"
 	"context"
-	"regexp"
-	"strconv"
+
 	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/web"
 	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/config"
 	"github.com/mamemomonga/mamemocraft/mcweb/mcweb/buildinfo"
@@ -16,32 +15,22 @@ import (
 type Actions struct {
 	gce      *GCE
 	sshconf  *SSHConfig
-	sync     *Sync
-
-	mutex    *sync.Mutex
-
-	doStatus bool
-	doStart  bool
-
-	mcRunning bool
-
-	state    int
-	message  string
-
-	players  int
-	playersZeroRemain int
-
-	rconPassword string
-
+	players  *Players
 	dymap    *Dymap
 	mastodon *Mastodon
 
+	sync     *Sync
+	mutex    *sync.Mutex
+
+	doStatus  bool
+	doStart   bool
+	mcRunning bool
+	state    int
+	message  string
+	rconPassword string
 	autoReboot bool
 
 }
-
-const PlayersZeroEnable = true
-const PlayersZeroMax = 10 // プレイヤーゼロが継続したらシャットダウン
 
 const StatusUnknown  = 0
 const StatusStop     = 1
@@ -51,65 +40,71 @@ const StatusRunning  = 3
 func New(configFile string) *Actions {
 	t := new(Actions)
 
-	config,err := config.Load(configFile)
+	c,err := config.Load(configFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	t.gce = NewGCE(&GCEConfig{
-		CredentialsFile: config.GCE.KeyFile,
-		Project:         config.GCE.Project,
-		Zone:            config.GCE.Zone,
-		Instance:        config.GCE.Instance,
+		CredentialsFile: c.GCE.KeyFile,
+		Project:         c.GCE.Project,
+		Zone:            c.GCE.Zone,
+		Instance:        c.GCE.Instance,
 	})
 	t.sshconf =  &SSHConfig{
-		KeyFile: config.SSH.KeyFile,
-		User:    config.SSH.User,
-		Host:    config.SSH.Host,
-		Port:    config.SSH.Port,
+		KeyFile: c.SSH.KeyFile,
+		User:    c.SSH.User,
+		Host:    c.SSH.Host,
+		Port:    c.SSH.Port,
 		ConnectTimeout: 10,
 	}
 	t.dymap = NewDymap(&DymapConfig{
-		Listen: config.Dymap.Listen,
-		WebURL: config.Dymap.WebURL,
+		Listen: c.Dymap.Listen,
+		WebURL: c.Dymap.WebURL,
 		SSHconfig: t.sshconf,
 	})
 
-	t.rconPassword = config.Rcon.Password
+	t.rconPassword = c.Rcon.Password
 	t.mcRunning = false
 	t.mutex = new(sync.Mutex)
 
-	if config.AutoReboot {
-		log.Printf("info: [Config] AutoReboot Mode ON")
-	} else {
-		log.Printf("info: [Config] AutoReboot Mode OFF")
-	}
-	t.autoReboot = config.AutoReboot
+	t.configBoolInfo(c.AutoReboot,"AutoReboot")
+	t.autoReboot = c.AutoReboot
 
-	if config.Sync.Enable {
-		log.Printf("info: [Config] Sync ON")
-	} else {
-		log.Printf("info: [Config] Sync OFF")
-	}
+	t.configBoolInfo(c.Sync.Enable,"Sync")
 	t.sync = NewSync(&SyncConfig{
-		Enable: config.Sync.Enable,
-		APPDir: config.Sync.APPDir,
+		Enable: c.Sync.Enable,
+		APPDir: c.Sync.APPDir,
 	})
 
-	if config.Mastodon.Enable {
-		log.Printf("info: [Config] Mastodon ON")
-	} else {
-		log.Printf("info: [Config] Mastodon OFF")
-	}
+	t.configBoolInfo(c.Players.ZeroShutdown,"PlayersZeroShutdown")
+	t.players = NewPlayers(&PlayersConfig{
+		ZeroShutdown:      c.Players.ZeroShutdown,
+		ZeroShutdownCount: c.Players.ZeroShutdownCount,
+		MCRunning:         &t.mcRunning,
+		Shutdown: func(){
+			_,_ = NewSSH(t.sshconf).GetExitBool("sudo /sbin/poweroff")
+		},
+	})
+
+	t.configBoolInfo(c.Mastodon.Enable,"Mastodon")
 	t.mastodon = NewMastodon( &MastodonConfig{
-		Enable:     config.Mastodon.Enable,
-		Server:     config.Mastodon.Server,
-		Email:      config.Mastodon.Email,
-		Password:   config.Mastodon.Password,
-		ClientFile: config.Mastodon.ClientFile,
-		ClientName: config.Mastodon.ClientName,
+		Enable:     c.Mastodon.Enable,
+		Server:     c.Mastodon.Server,
+		Email:      c.Mastodon.Email,
+		Password:   c.Mastodon.Password,
+		ClientFile: c.Mastodon.ClientFile,
+		ClientName: c.Mastodon.ClientName,
 	})
 	return t
+}
+
+func (t *Actions) configBoolInfo(b bool,title string) {
+	if b {
+		log.Printf("info: [Config] %s ENABLE",title)
+	} else {
+		log.Printf("info: [Config] %s DISABLE",title)
+	}
 }
 
 func (t *Actions) Run() {
@@ -122,14 +117,10 @@ func (t *Actions) Run() {
 	}
 
 	t.doStatus = true
-	t.playersZeroRemain = PlayersZeroMax
 
 	go t.sync.Start(context.Background())
 	go t.Runner()
-
-	if PlayersZeroEnable {
-		go t.playersZero()
-	}
+	go t.players.Start()
 
 	w := web.NewWebMain("127.0.0.1:5005")
 	w.CbStatus = t.Status
@@ -172,45 +163,19 @@ func (t *Actions) Runner() {
 			t.runnerDoStatus()
 		}
 		if t.mcRunning {
-			t.loginPlayers()
+			cmd := fmt.Sprintf("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p %s list",t.rconPassword)
+			buf,err := NewSSH(t.sshconf).GetStdout(cmd)
+			if err == nil {
+				t.players.Check(buf)
+			}
 			go t.dymap.RunPF()
 			t.sync.Run()
 		} else {
-			t.playersZeroRemain = PlayersZeroMax
+			t.players.Reset()
 			go t.dymap.RunWeb()
 			t.sync.Stop()
 		}
 		time.Sleep(time.Second * 10)
-	}
-}
-
-func (t *Actions) loginPlayers() {
-	cmd := fmt.Sprintf("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p %s list",t.rconPassword)
-	buf,err := NewSSH(t.sshconf).GetStdout(cmd)
-	if err == nil {
-		log.Printf("[Players] %s",buf)
-		rex := regexp.MustCompile(`^There are (\d+) of a max (\d+) players online:`)
-		match := rex.FindStringSubmatch(buf)
-		current,_ := strconv.Atoi(match[1])
-		t.players = current
-		log.Printf("[Players] Current %d",t.players)
-		if t.players > 0 {
-			t.playersZeroRemain = PlayersZeroMax
-		}
-	}
-}
-
-func (t *Actions) playersZero() {
-	for {
-		if t.mcRunning {
-			log.Printf("[PlayersZero] Remain: %d",t.playersZeroRemain)
-			if t.playersZeroRemain == 0 {
-				_,_ = NewSSH(t.sshconf).GetExitBool("sudo /sbin/poweroff")
-			} else {
-				t.playersZeroRemain--
-			}
-		}
-		time.Sleep( time.Minute )
 	}
 }
 
