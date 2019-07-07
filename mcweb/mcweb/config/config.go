@@ -7,11 +7,12 @@ import (
 )
 
 type Config struct {
-	GCE   GCEType   `yaml:"gce"`
-	SSH   SSHType   `yaml:"ssh"`
-	Sync  SyncType  `yaml:"sync"`
-	Rcon  RconType  `yaml:"rcon"`
-	Dymap DymapType `yaml:"dymap"`
+	GCE      GCEType      `yaml:"gce"`
+	SSH      SSHType      `yaml:"ssh"`
+	Sync     SyncType     `yaml:"sync"`
+	Rcon     RconType     `yaml:"rcon"`
+	Dymap    DymapType    `yaml:"dymap"`
+	Mastodon MastodonType `yaml:"mastodon"`
 }
 
 type GCEType struct {
@@ -41,6 +42,14 @@ type DymapType struct {
 	Listen     string `yaml:"listen"`
 	Forward    string `yaml:"forward"`
 	WebURL     string `yaml:"weburl"`
+}
+
+type MastodonType struct {
+	Server      string `yaml:"server"`
+	Email       string `yaml:"email"`
+	Password    string `yaml:"password"`
+	ClientFile  string `yaml:"client_file"`
+	ClientName  string `yaml:"client_name"`
 }
 
 
