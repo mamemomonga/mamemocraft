@@ -13,6 +13,7 @@ import (
 type Mastodon struct {
 	c      *MastodonConfig
 	client *mastodon.Client
+	Ready  bool
 }
 
 type MastodonConfig struct {
@@ -35,7 +36,7 @@ type ClientTokens struct {
 func NewMastodon(c *MastodonConfig) *Mastodon {
 	t := new(Mastodon)
 	t.c = c
-
+	t.Ready = false
 	return t
 }
 
@@ -84,10 +85,7 @@ func (t *Mastodon) Connect() (err error) {
 	log.Printf("info: [Mastodon] SelfID:      %s",account.ID)
 	log.Printf("info: [Mastodon] Username:    %s",account.Username)
 	log.Printf("info: [Mastodon] DisplayName: %s",account.DisplayName)
-	return nil
-}
-
-func (t *Mastodon) register_app(ctx context.Context) error {
+	t.Ready = true
 	return nil
 }
 
@@ -118,6 +116,9 @@ func (t *Mastodon) loadClientFile(cc *ClientConfigs) (err error) {
 }
 
 func (t *Mastodon) Toot(s string) error {
+	if ! t.Ready {
+		return nil
+	}
 	ctx := context.Background()
 	toot := mastodon.Toot{ Status: s }
 	_, err := t.client.PostStatus( ctx, &toot )

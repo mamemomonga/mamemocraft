@@ -35,6 +35,7 @@ type Actions struct {
 
 	dymap    *Dymap
 	mastodon *Mastodon
+	prevToot string
 
 }
 
@@ -83,7 +84,7 @@ func New(configFile string) *Actions {
 	t.sync = NewSync(config.Sync)
 
 
-	t.mastodon = actions.NewMastodon( &MastodonConfig{
+	t.mastodon = NewMastodon( &MastodonConfig{
 		Server:     config.Mastodon.Server,
 		Email:      config.Mastodon.Email,
 		Password:   config.Mastodon.Password,
@@ -104,6 +105,20 @@ func (t *Actions) setStateMessage(s int, m string) {
 	t.message = m
 	t.mutex.Unlock()
 }
+
+func (t *Actions) toot(s string) {
+
+	if t.prevToot == s {
+		return
+	}
+
+	if err := t.mastodon.Toot( fmt.Sprintf("[まめもくらふと] %s ﾖｼ :genbaneko:",s)); err != nil {
+		log.Printf("alert: [Mastodon] %s", err)
+	}
+
+	t.prevToot = s
+}
+
 
 func (t *Actions) Run() {
 	t.doStatus = true
@@ -135,7 +150,6 @@ func (t *Actions) Run() {
 func (t *Actions) Runner() {
 
 	for {
-		log.Println("[RUNNER]")
 		if t.doStart {
 			t.runnerDoStart()
 		}
@@ -213,15 +227,20 @@ func (t *Actions) runnerDoStatus() {
 	switch st.Status {
 	case "RUNNING":
 		t.mcRunning =  t.mcStatus()
+
 	case "STOPPING":
 		t.mcRunning = false
 		t.setStateMessage( StatusLoading, "停止作業中")
+
 	case "TERMINATED":
 		t.mcRunning = false
 		t.setStateMessage( StatusStop, "停止")
+		t.toot("停止")
+
 	case "STAGING":
 		t.mcRunning = false
 		t.setStateMessage( StatusLoading, "起動準備中")
+
 	default:
 		t.mcRunning = false
 		t.setStateMessage( StatusUnknown, st.Status)
@@ -263,6 +282,7 @@ func (t *Actions) mcStatus() bool {
 	if running {
 		t.setStateMessage( StatusRunning, "まめもくらふと動作中")
 		log.Printf("[SSH] mamemocraft is running")
+		t.toot("起動")
 		return true
 	} else {
 		t.setStateMessage( StatusLoading, "Minecraft Serverを起動中")

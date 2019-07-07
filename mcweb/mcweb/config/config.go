@@ -16,7 +16,7 @@ type Config struct {
 }
 
 type GCEType struct {
-	KeyFile   string `yaml:"key_file"`
+	KeyFile   string `yaml:"keyfile"`
 	Project   string `yaml:"project"`
 	Zone      string `yaml:"zone"`
 	Instance  string `yaml:"instance"`
