@@ -29,6 +29,7 @@ type Actions struct {
 	message      string
 	rconPassword string
 	autoReboot   bool
+	isTerminated bool
 }
 
 const StatusUnknown = 0
@@ -159,11 +160,23 @@ func (t *Actions) toot(s string) {
 func (t *Actions) Runner() {
 
 	for {
+		if ! t.isTerminated {
+			t.mutex.Lock()
+			t.doStatus = true
+			t.mutex.Unlock()
+		}
+
 		if t.doStart {
 			t.runnerDoStart()
+			t.mutex.Lock()
+			t.doStart = false
+			t.mutex.Unlock()
 		}
 		if t.doStatus {
 			t.runnerDoStatus()
+			t.mutex.Lock()
+			t.doStatus = false
+			t.mutex.Unlock()
 		}
 		if t.mcRunning {
 			cmd := fmt.Sprintf("/home/mamemocraft/mamemocraft/bin/mcrcon -H localhost -p %s -c list", t.rconPassword)
@@ -191,9 +204,7 @@ func (t *Actions) runnerDoStart() {
 		return
 	}
 	t.setStateMessage(StatusLoading, "インスタンス起動中")
-	t.mutex.Lock()
-	t.doStart = false
-	t.mutex.Unlock()
+
 	time.Sleep(time.Second * 20)
 }
 
@@ -209,28 +220,30 @@ func (t *Actions) runnerDoStatus() {
 
 	switch st.Status {
 	case "RUNNING":
+		t.isTerminated = false
 		t.mcRunning = t.mcStatus()
 
 	case "STOPPING":
+		t.isTerminated = false
 		t.mcRunning = false
 		t.setStateMessage(StatusLoading, "停止作業中")
 
 	case "TERMINATED":
 		t.mcRunning = false
+		t.isTerminated = true
 		t.setStateMessage(StatusStop, "停止")
 		t.toot("停止")
 
 	case "STAGING":
+		t.isTerminated = false
 		t.mcRunning = false
 		t.setStateMessage(StatusLoading, "起動準備中")
 
 	default:
+		t.isTerminated = false
 		t.mcRunning = false
 		t.setStateMessage(StatusUnknown, st.Status)
 	}
-	t.mutex.Lock()
-	t.doStatus = false
-	t.mutex.Unlock()
 }
 
 func (t *Actions) mcStatus() bool {
