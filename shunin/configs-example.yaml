@@ -1,0 +1,7 @@
+rcon:
+  host: "127.0.0.1"
+  password: "password"
+mastodon:
+  server:      "don.mamemo.online"
+  email:       "email@address.com"
+  password:    "password"
