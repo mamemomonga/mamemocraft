@@ -15,7 +15,7 @@ func main() {
 
 	rcon.Host = cs.C().Rcon.Host
 	rcon.Password = cs.C().Rcon.Password
-	if c,err := cs.GetDir("mcrcon"); err == nil {
+	if c,err := cs.GetDir("bin/mcrcon"); err == nil {
 		rcon.Mcrcon = c
 	} else {
 		log.Fatal(err)
